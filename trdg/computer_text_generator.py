@@ -15,6 +15,8 @@ def generate(
     word_split,
     stroke_width=0, 
     stroke_fill="#282828",
+    random_spacing=False,
+    num_text_limit_for_random_spacing=None,
 ):
     if orientation == 0:
         return _generate_horizontal_text(
@@ -28,6 +30,8 @@ def generate(
             word_split,
             stroke_width,
             stroke_fill,
+            random_spacing=random_spacing,
+            num_text_limit_for_random_spacing=num_text_limit_for_random_spacing,
         )
     elif orientation == 1:
         return _generate_vertical_text(
@@ -40,7 +44,8 @@ def generate(
 
 def _generate_horizontal_text(
     text, font, text_color, font_size, space_width, character_spacing, fit, word_split, 
-    stroke_width=0, stroke_fill="#282828"
+    stroke_width=0, stroke_fill="#282828", random_spacing=False,
+    num_text_limit_for_random_spacing=None,
 ):
     image_font = ImageFont.truetype(font=font, size=font_size)
 
@@ -55,12 +60,19 @@ def _generate_horizontal_text(
     else:
         splitted_text = text
 
+    if random_spacing and len(splitted_text) < num_text_limit_for_random_spacing:
+        splitted_text = list(splitted_text)
+        while len(splitted_text) < num_text_limit_for_random_spacing:
+            splitted_text.insert(rnd.randint(0, len(splitted_text)), " ")
+
     piece_widths = [
         image_font.getsize(p)[0] if p != " " else space_width for p in splitted_text
     ]
     text_width = sum(piece_widths)
     if not word_split:
-        text_width += character_spacing * (len(text) - 1)
+        # NOTE: We should use `splitted_text` to calculate required width for
+        # additional spaces here.
+        text_width += character_spacing * (len(splitted_text) - 1)
 
     text_height = max([image_font.getsize(p)[1] for p in splitted_text])
 

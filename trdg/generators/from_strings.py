@@ -38,6 +38,8 @@ class GeneratorFromStrings:
         stroke_width=0, 
         stroke_fill="#282828",
         image_mode="RGB",
+        random_spacing=False,
+        num_text_limit_for_random_spacing=None,
     ):
         self.count = count
         self.strings = strings
@@ -69,6 +71,8 @@ class GeneratorFromStrings:
         self.stroke_width = stroke_width
         self.stroke_fill = stroke_fill
         self.image_mode = image_mode 
+        self.random_spacing = random_spacing
+        self.num_text_limit_for_random_spacing = num_text_limit_for_random_spacing
 
     def __iter__(self):
         return self
@@ -111,6 +115,8 @@ class GeneratorFromStrings:
                 self.stroke_width,
                 self.stroke_fill,
                 self.image_mode, 
+                random_spacing=self.random_spacing,
+                num_text_limit_for_random_spacing=self.num_text_limit_for_random_spacing,
             ),
             self.strings[(self.generated_count - 1) % len(self.strings)],
         )

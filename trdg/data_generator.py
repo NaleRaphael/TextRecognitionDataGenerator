@@ -52,6 +52,8 @@ class FakeTextDataGenerator(object):
         stroke_width=0, 
         stroke_fill="#282828",
         image_mode="RGB", 
+        random_spacing=False,
+        num_text_limit_for_random_spacing=None,
     ):
         image = None
 
@@ -79,6 +81,8 @@ class FakeTextDataGenerator(object):
                 word_split,
                 stroke_width, 
                 stroke_fill,
+                random_spacing=random_spacing,
+                num_text_limit_for_random_spacing=num_text_limit_for_random_spacing,
             )
         random_angle = rnd.randint(0 - skewing_angle, skewing_angle)
 
