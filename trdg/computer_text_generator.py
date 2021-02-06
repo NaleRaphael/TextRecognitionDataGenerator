@@ -47,7 +47,7 @@ def _generate_horizontal_text(
     stroke_width=0, stroke_fill="#282828", random_spacing=False,
     num_text_limit_for_random_spacing=None,
 ):
-    if num_text_limit_for_random_spacing is None:
+    if random_spacing and num_text_limit_for_random_spacing is None:
         raise ValueError('`num_text_limit_for_random_spacing` should be specified when '
             '`random_spacing` is True.')
     image_font = ImageFont.truetype(font=font, size=font_size)
