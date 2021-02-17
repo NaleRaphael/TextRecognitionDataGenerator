@@ -16,8 +16,22 @@ def generate(
     stroke_width=0, 
     stroke_fill="#282828",
     random_spacing=False,
-    num_text_limit_for_random_spacing=None,
+    max_num_text_for_random_spacing=None,
+    random_font_size=False,
+    min_font_size=None,
+    random_number_char_spacing=False,
+    random_y_pos=0,
 ):
+    """
+    Parameters
+    ----------
+    random_spacing : bool
+    max_num_text_for_random_spacing : int or None
+    random_font_size : bool
+    min_font_size : int or None
+    random_number_char_spacing : bool
+    random_y_pos : int, list, tuple or None
+    """
     if orientation == 0:
         return _generate_horizontal_text(
             text,
@@ -31,7 +45,11 @@ def generate(
             stroke_width,
             stroke_fill,
             random_spacing=random_spacing,
-            num_text_limit_for_random_spacing=num_text_limit_for_random_spacing,
+            max_num_text_for_random_spacing=max_num_text_for_random_spacing,
+            random_font_size=random_font_size,
+            min_font_size=min_font_size,
+            random_number_char_spacing=random_number_char_spacing,
+            random_y_pos=random_y_pos,
         )
     elif orientation == 1:
         return _generate_vertical_text(
@@ -45,11 +63,15 @@ def generate(
 def _generate_horizontal_text(
     text, font, text_color, font_size, space_width, character_spacing, fit, word_split, 
     stroke_width=0, stroke_fill="#282828", random_spacing=False,
-    num_text_limit_for_random_spacing=None,
+    max_num_text_for_random_spacing=None, random_font_size=False,
+    min_font_size=None, random_number_char_spacing=False, random_y_pos=0,
 ):
-    if random_spacing and num_text_limit_for_random_spacing is None:
-        raise ValueError('`num_text_limit_for_random_spacing` should be specified when '
+    if random_spacing and max_num_text_for_random_spacing is None:
+        raise ValueError('`max_num_text_for_random_spacing` should be specified when '
             '`random_spacing` is True.')
+    if random_font_size and min_font_size is None:
+        raise ValueError('`min_font_size` should be specified when `random_font_size` is True.')
+
     image_font = ImageFont.truetype(font=font, size=font_size)
 
     space_width = int(image_font.getsize(" ")[0] * space_width)
@@ -63,9 +85,9 @@ def _generate_horizontal_text(
     else:
         splitted_text = text
 
-    if random_spacing and len(splitted_text) < num_text_limit_for_random_spacing:
+    if random_spacing and len(splitted_text) < max_num_text_for_random_spacing:
         splitted_text = list(splitted_text)
-        while len(splitted_text) < num_text_limit_for_random_spacing:
+        while len(splitted_text) < max_num_text_for_random_spacing:
             splitted_text.insert(rnd.randint(0, len(splitted_text)), " ")
 
     piece_widths = [
@@ -104,23 +126,45 @@ def _generate_horizontal_text(
         rnd.randint(min(stroke_c1[2], stroke_c2[2]), max(stroke_c1[2], stroke_c2[2])),
     )
 
+    current_font = image_font
+    prev_number_size = current_font.getsize('0')[0]
+    y = 0
+    prev_text = ''
+    x_offset = 0
+
     for i, p in enumerate(splitted_text):
+        if random_font_size:
+            current_font_size = rnd.randint(min_font_size, font_size)
+            current_font = image_font.font_variant(size=current_font_size)
+        if random_y_pos:
+            if isinstance(random_y_pos, (list, tuple)):
+                y = rnd.randint(*random_y_pos)
+            else:
+                y = rnd.randint(-random_y_pos, random_y_pos)
+
+        x = sum(piece_widths[0:i]) + i * character_spacing * int(not word_split)
+        if random_number_char_spacing:
+            if prev_text.isnumeric() and p.isnumeric() and rnd.randint(0, 1):
+                x_offset += int(prev_number_size/4*3)
+
         txt_img_draw.text(
-            (sum(piece_widths[0:i]) + i * character_spacing * int(not word_split), 0),
+            (x - x_offset, y),
             p,
             fill=fill,
-            font=image_font,
+            font=current_font,
             stroke_width=stroke_width,
             stroke_fill=stroke_fill,
         )
         txt_mask_draw.text(
-            (sum(piece_widths[0:i]) + i * character_spacing * int(not word_split), 0),
+            (x - x_offset, y),
             p,
             fill=((i + 1) // (255 * 255), (i + 1) // 255, (i + 1) % 255),
-            font=image_font,
+            font=current_font,
             stroke_width=stroke_width,
             stroke_fill=stroke_fill,
         )
+        prev_text = p
+        prev_number_size = current_font.getsize('0')[0]
 
     if fit:
         return txt_img.crop(txt_img.getbbox()), txt_mask.crop(txt_img.getbbox())
