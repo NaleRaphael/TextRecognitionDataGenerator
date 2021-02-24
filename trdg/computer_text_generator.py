@@ -90,9 +90,27 @@ def _generate_horizontal_text(
         while len(splitted_text) < max_num_text_for_random_spacing:
             splitted_text.insert(rnd.randint(0, len(splitted_text)), " ")
 
-    piece_widths = [
-        image_font.getsize(p)[0] if p != " " else space_width for p in splitted_text
-    ]
+    if random_font_size:
+        font_size_list = [rnd.randint(min_font_size, font_size) for i in range(len(splitted_text))]
+        font_list = [image_font.font_variant(size=v) for v in font_size_list]
+        piece_widths = [
+            font_list[i].getsize(p)[0] if p != " " else space_width for i, p in enumerate(splitted_text)
+        ]
+    else:
+        font_size_list = [font_size]*len(splitted_text)
+        font_list = None
+        piece_widths = [
+            image_font.getsize(p)[0] if p != " " else space_width for i, p in enumerate(splitted_text)
+        ]
+
+    if random_y_pos:
+        if isinstance(random_y_pos, (list, tuple)):
+            y_pos_list = [rnd.randint(*random_y_pos) for i in range(len(splitted_text))]
+        else:
+            y_pos_list = [rnd.randint(-random_y_pos, random_y_pos) for i in range(len(splitted_text))]
+    else:
+        y_pos_list = None
+
     text_width = sum(piece_widths)
     if not word_split:
         # NOTE: We should use `splitted_text` to calculate required width for
@@ -133,19 +151,13 @@ def _generate_horizontal_text(
     x_offset = 0
 
     for i, p in enumerate(splitted_text):
-        if random_font_size:
-            current_font_size = rnd.randint(min_font_size, font_size)
-            current_font = image_font.font_variant(size=current_font_size)
-        if random_y_pos:
-            if isinstance(random_y_pos, (list, tuple)):
-                y = rnd.randint(*random_y_pos)
-            else:
-                y = rnd.randint(-random_y_pos, random_y_pos)
-
-        x = sum(piece_widths[0:i]) + i * character_spacing * int(not word_split)
         if random_number_char_spacing:
             if prev_text.isnumeric() and p.isnumeric() and rnd.randint(0, 1):
-                x_offset += int(prev_number_size/4*3)
+                x_offset += character_spacing
+
+        y = y_pos_list[i] if random_y_pos else 0
+        x = sum(piece_widths[0:i]) + i * character_spacing * int(not word_split)
+        current_font = font_list[i] if random_font_size else image_font
 
         txt_img_draw.text(
             (x - x_offset, y),
